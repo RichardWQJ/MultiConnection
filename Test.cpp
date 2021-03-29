@@ -7,13 +7,17 @@
 #include <time.h>
 #include <string.h>
 #include "MqttConnection.hpp"
+#include "MsgHandler.hpp"
+#include "Util.h"
+
+std::string strComponentName = "MQTT_TEST";
 
 void PubThreadFun()
 {
     std::shared_ptr<BaseConnection> client = std::make_shared<MqttConnection>(MQTT_HOST, MQTT_PORT, BDSTAR_MOSQUITTP_PUB_CONNECTION);
     client->Run();
 
-    std::cout << "PUB Thread:[" << std::this_thread::get_id() << "]" << std::endl;
+    DebugPrint("PUB Thread:[%d]\r\n", std::this_thread::get_id());
 
     std::string strMsgSend;
     while (1)
@@ -22,6 +26,7 @@ void PubThreadFun()
         tm *t_tm = localtime(&now_time);
 
         strMsgSend = asctime(t_tm);
+        strMsgSend = strMsgSend.substr(0, strMsgSend.length() - 1);
         client->MsgSend(strMsgSend);
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
@@ -32,7 +37,8 @@ void SubThreadFun()
     std::shared_ptr<BaseConnection> client = std::make_shared<MqttConnection>(MQTT_HOST, MQTT_PORT, BDSTAR_MOSQUITTP_SUB_CONNECTION);
     client->Run();
 
-    std::cout << "SUB Thread:[" << std::this_thread::get_id() << "]" << std::endl;
+    DebugPrint("SUB Thread:[%d]\r\n", std::this_thread::get_id());
+
     while (1)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -61,10 +67,16 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    std::cout << "MAIN Thread:[" << std::this_thread::get_id() << "]" << std::endl;
+    DebugPrint("MAIN Thread:[%d]\r\n", std::this_thread::get_id());
     while (1)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::string strWarnMsg = MsgHandler::GetInstance()->MsgPop();
+        if (!strWarnMsg.empty())
+        {
+            InfoPrint("Warning Message:[%s] Comming\r\n", strWarnMsg.c_str());
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
     return 0;

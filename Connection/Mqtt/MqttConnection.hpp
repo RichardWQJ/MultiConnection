@@ -3,6 +3,7 @@
 
 #include "BaseConnection.hpp"
 #include "mosquitto.h"
+#include "Util.h"
 
 #define MQTT_HOST "localhost"
 #define MQTT_PORT 1883
@@ -15,8 +16,6 @@
 
 class MqttConnection : public BaseConnection
 {
-    // friend class BaseConnection;
-
 public:
     MqttConnection(string host, int port, ConnectType type);
     ~MqttConnection();

@@ -1,6 +1,6 @@
 TARGET = TEST
 
-CROSS_CHAIN = #aarch64-linux-gnu-
+CROSS_CHAIN = 
 
 CC = $(CROSS_CHAIN)gcc
 CXX = $(CROSS_CHAIN)g++
@@ -10,17 +10,20 @@ STRIP = $(CROSS_CHAIN)strip
 SRC_PATH = \
 	./Test.cpp \
 	./Connection/Mqtt/MqttConnection.cpp \
-	./Connection/Tcp/TcpConnection.cpp
+	./Connection/Tcp/TcpConnection.cpp \
+	./MsgHandler/MsgHandler.cpp \
 
 INCLUDE_FLAG = \
 	-I./Connection \
 	-I./Connection/Mqtt \
 	-I./Connection/Tcp \
+	-I./MsgHandler \
+	-I./Common/include/Utils \
 	-I./third_party/include
 
 LIB_FLAG = \
 	-L./third_party/lib/x86_64
-	#-L./third_party/lib/aarch64
+
 LIB_FLAGS =
 LIBXX_FLAGS = -lpthread -lmosquitto
 

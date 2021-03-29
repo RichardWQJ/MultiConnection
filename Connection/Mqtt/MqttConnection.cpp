@@ -1,5 +1,6 @@
 #include <functional>
 #include "MqttConnection.hpp"
+#include "MsgHandler.hpp"
 
 bool BaseConnection::m_isConnected = false;
 
@@ -33,8 +34,6 @@ void MqttConnection::Init()
         this->m_ptrMosq = mosquitto_new(NULL, true, NULL);
     }
 
-    std::cout << "DEBUG" << std::endl;
-
     // auto ConnectCallback = std::bind(&MqttConnection::on_connect_callback,
     //                                  this,
     //                                  std::placeholders::_1,
@@ -48,7 +47,7 @@ void MqttConnection::Init()
     {
         mosquitto_publish_callback_set(this->m_ptrMosq, MqttConnection::on_publish_callback);
     }
-    else
+    else if (this->m_connectType == BDSTAR_MOSQUITTP_SUB_CONNECTION)
     {
         mosquitto_subscribe_callback_set(this->m_ptrMosq, MqttConnection::on_subscribe_callback);
         mosquitto_message_callback_set(this->m_ptrMosq, MqttConnection::on_message_callback);
@@ -71,7 +70,7 @@ void MqttConnection::Connect()
 {
     if (mosquitto_connect(this->m_ptrMosq, this->m_strHost.c_str(), this->m_iPort, this->m_iKeepAlive) != MOSQ_ERR_SUCCESS)
     {
-        std::cout << "Connect Error" << std::endl;
+        ErrPrint("Connect Error\r\n");
         MqttConnection::m_isConnected = false;
         if (this->m_ptrMosq != NULL)
         {
@@ -92,35 +91,36 @@ void MqttConnection::MsgRecieve()
 
 void MqttConnection::MsgSend(std::string &strMsg)
 {
-    std::cout << "MsgSend:[" << strMsg.substr(0, strMsg.length() - 1) << "]" << std::endl;
+    InfoPrint("MsgSend:[%s]\r\n", strMsg.c_str());
     mosquitto_publish(this->m_ptrMosq, NULL, MQTT_TOPIC_WARN_VIEW, strMsg.length(), (void *)strMsg.c_str(), 1, false);
 }
 
 void MqttConnection::on_connect_callback(struct mosquitto *mosq, void *obj, int rc)
 {
-    std::cout << "Mqtt Connect Success" << std::endl;
+    DebugPrint("Mqtt Connect Success\r\n");
     MqttConnection::m_isConnected = true;
 }
 
 void MqttConnection::on_disconnect_callback(struct mosquitto *mosq, void *obj, int result)
 {
-    std::cout << "Mqtt Disconnected" << std::endl;
+    WarnPrint("Mqtt Disconnected\r\n");
     MqttConnection::m_isConnected = false;
 }
 
 void MqttConnection::on_publish_callback(struct mosquitto *mosq, void *obj, int mid)
 {
-    std::cout << "on_publish_callback" << std::endl;
+    DebugPrint("on_publish_callback\r\n");
 }
 
 void MqttConnection::on_subscribe_callback(struct mosquitto *mosq, void *obj, int mid, int qos_count, const int *granted_qos)
 {
-    std::cout << "on_subscribe_callback" << std::endl;
+    DebugPrint("on_subscribe_callback\r\n");
 }
 
 void MqttConnection::on_message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *msg)
 {
-    std::cout << "FROM topic: " << msg->topic << std::endl;
+    InfoPrint("FROM topic:[%s], GOT message:[%s]", msg->topic, (const char *)msg->payload);
+
     std::string strWarnMsg = (const char *)msg->payload;
-    std::cout << "GOT message:" << strWarnMsg << std::endl;
+    MsgHandler::GetInstance()->MsgPush(strWarnMsg);
 }
