@@ -2,7 +2,7 @@ TARGET = TEST
 TARGET_STATIC_LIB = libMqttConnection.a
 TARGET_DYNAMIC_LIB = libMqttConnection.so
 
-CROSS_CHAIN = 
+CROSS_CHAIN = aarch64-linux-gnu-
 
 CC = $(CROSS_CHAIN)gcc
 CXX = $(CROSS_CHAIN)g++
@@ -27,7 +27,8 @@ INCLUDE_FLAG = \
 
 LIB_FLAGS = \
 	-L./ \
-	-L./third_party/lib/x86_64
+	-L./third_party/lib/aarch64
+	# -L./third_party/lib/x86_64
 
 LIBXX_FLAGS = -lpthread -lmosquitto
 LIB_CUSTOM_FLAGS = -lMqttConnection
