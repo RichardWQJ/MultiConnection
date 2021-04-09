@@ -7,17 +7,19 @@
 #include <time.h>
 #include <string.h>
 #include "MqttConnection.hpp"
-#include "MsgHandler.hpp"
 #include "Util.h"
 
 std::string strComponentName = "MQTT_TEST";
 
+void DataRecieveCb(const std::string &dataRecieved)
+{
+    InfoPrint("Warning Message:[%s] Comming\r\n", dataRecieved.c_str());
+}
+
 void PubThreadFun()
 {
-    std::shared_ptr<BaseConnection> client = std::make_shared<MqttConnection>(MQTT_HOST, MQTT_PORT, BDSTAR_MOSQUITTP_PUB_CONNECTION);
-    client->Run();
-
-    DebugPrint("PUB Thread:[%d]\r\n", std::this_thread::get_id());
+    MqttConnection::GetInstance()->Init(MQTT_HOST, MQTT_PORT, BDSTAR_SOCKET_MQTT);
+    MqttConnection::GetInstance()->Run();
 
     std::string strMsgSend;
     while (1)
@@ -27,17 +29,20 @@ void PubThreadFun()
 
         strMsgSend = asctime(t_tm);
         strMsgSend = strMsgSend.substr(0, strMsgSend.length() - 1);
-        client->MsgSend(strMsgSend);
+        MqttConnection::GetInstance()->MsgSend(MQTT_TOPIC_WARN_MIDDLEWARE_TO_HMI, strMsgSend);
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
 }
 
 void SubThreadFun()
 {
-    std::shared_ptr<BaseConnection> client = std::make_shared<MqttConnection>(MQTT_HOST, MQTT_PORT, BDSTAR_MOSQUITTP_SUB_CONNECTION);
-    client->Run();
+    std::vector<std::string> strTopicList;
+    strTopicList.emplace_back(std::string(MQTT_TOPIC_WARN_MIDDLEWARE_TO_HMI));
 
-    DebugPrint("SUB Thread:[%d]\r\n", std::this_thread::get_id());
+    MqttConnection::GetInstance()->Init(MQTT_HOST, MQTT_PORT, BDSTAR_SOCKET_MQTT);
+    MqttConnection::GetInstance()->Subscribe(strTopicList);
+    MqttConnection::GetInstance()->RegisterDataRecieveCallBackFunc(&DataRecieveCb);
+    MqttConnection::GetInstance()->Run();
 
     while (1)
     {
@@ -67,16 +72,9 @@ int main(int argc, char *argv[])
         exit(-1);
     }
 
-    DebugPrint("MAIN Thread:[%d]\r\n", std::this_thread::get_id());
     while (1)
     {
-        std::string strWarnMsg = MsgHandler::GetInstance()->MsgPop();
-        if (!strWarnMsg.empty())
-        {
-            InfoPrint("Warning Message:[%s] Comming\r\n", strWarnMsg.c_str());
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 
     return 0;
